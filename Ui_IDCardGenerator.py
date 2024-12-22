@@ -240,7 +240,7 @@ class Ui_IDCardGenerator(object):
         self.verticalLayout.setStretch(2, 3)
 
         self.retranslateUi(IDCardGenerator)
-
+        self.addData()
         QMetaObject.connectSlotsByName(IDCardGenerator)
     # setupUi
 
@@ -264,6 +264,13 @@ class Ui_IDCardGenerator(object):
         self.checkCertNoButton.setText(QCoreApplication.translate("IDCardGenerator", u"\u89e3\u6790", None))
         self.aboutButton.setText(QCoreApplication.translate("IDCardGenerator", u"\u5173\u4e8e", None))
     # retranslateUi
+
+    def addData(self):
+        for i in range(30):
+            self.provinceSel.addItem("北京", i)
+        self.provinceSel.setMaxVisibleItems(10)
+        self.provinceSel.setEditable(True)
+        #self.provinceSel.setStyleSheet("QComboBox{combobox-popup:0;}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

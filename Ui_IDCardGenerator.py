@@ -1,10 +1,22 @@
-import sys
+import sys,json
+import calendar
+
 from PyQt6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
+from PyQt6.QtGui import QIntValidator
 from PyQt6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QRadioButton,
     QSizePolicy, QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_IDCardGenerator(object):
+
+    ADMDVS_MAP = {}
+    ODD_NUM = [1, 3, 5, 7, 9]
+    EVEN_NUM = [2, 4, 6, 8, 0]
+    # 加权因子
+    WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
+    # 校验码表
+    CHECK_CODE = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
+
     def setupUi(self, IDCardGenerator):
         if not IDCardGenerator.objectName():
             IDCardGenerator.setObjectName(u"IDCardGenerator")
@@ -265,12 +277,109 @@ class Ui_IDCardGenerator(object):
         self.aboutButton.setText(QCoreApplication.translate("IDCardGenerator", u"\u5173\u4e8e", None))
     # retranslateUi
 
+    # 设置信号与槽
+    def setSignalSlot(self):
+        self.provinceSel.activated.connect(self.updateCity)
+        self.provinceSel.activated.connect(self.updateDistrict)
+        self.citySel.activated.connect(self.updateDistrict)
+        self.monthSel.activated.connect(self.updateDay)
+        self.yearSel.activated.connect(self.updateDay)
+        self.getCertNoButton.clicked.connect(self.getCertNo)
+
+    def updateDay(self,index):
+        year = self.yearSel.currentText()
+        month = self.monthSel.currentText()
+        maxDay = calendar.monthrange(int(year), int(month))[1]
+        self.daySel.clear()
+        for i in range(1,maxDay + 1):
+            self.daySel.addItem(str(i).rjust(2,'0'))
+
+    def updateCity(self, index):
+        provinceCode = self.provinceSel.currentData()
+        for item in self.ADMDVS_MAP:
+            if item["value"] == provinceCode:
+                self.citySel.clear()
+                for city in item["children"]:
+                    self.citySel.addItem(city['name'], city['value'])
+                break
+
+    def updateDistrict(self,index):
+        cityCode = self.citySel.currentData()
+        provinceCode = self.provinceSel.currentData()
+        print(cityCode)
+        print(provinceCode)
+        for item in self.ADMDVS_MAP:
+            if item["value"] == provinceCode:
+                for city in item["children"]:
+                    if city["value"] == cityCode:
+                        self.districtSel.clear()
+                        for district in city["children"]:
+                            self.districtSel.addItem(district['name'], district['value'])
+                        break
+                break
+
+    def initQComboBox(self):
+        for item in self.ADMDVS_MAP:
+            self.provinceSel.addItem(item['name'], item['value'])
+        self.updateCity(1)
+        self.updateDistrict(1)
+
+        for i in range(1949,3000):
+            self.yearSel.addItem(str(i))
+
+        for i in range(1,13):
+            self.monthSel.addItem(str(i).rjust(2,'0'))
+
+        for i in range(1,32):
+            self.daySel.addItem(str(i).rjust(2,'0'))
+
+        self.provinceSel.setMaxVisibleItems(20)
+        # self.yearSel.setEditable(True)
+        # validator = QIntValidator(1949, 3000)
+        # self.yearSel.setValidator(validator)
+
+    def getCertNo(self):
+        admdvs = self.districtSel.currentData()
+        year = self.yearSel.currentText()
+        month = self.monthSel.currentText()
+        day = self.daySel.currentText()
+        isMan = self.man.isChecked() # 男单数
+        pre = admdvs + year + month + day
+        for i in range(100):
+            temp = pre + str(i).rjust(2,'0')
+            if isMan:
+                for j in self.ODD_NUM:
+                    temp2 = temp + str(j)
+                    checkCode = self.calculate_check_digit(temp2)
+                    print(temp2 + checkCode)
+            else:
+                for j in self.EVEN_NUM:
+                    temp2 = temp + str(j)
+                    checkCode = self.calculate_check_digit(temp2)
+                    print(temp2 + checkCode)
+
+    def calculate_check_digit(self,id_number):
+        # 加权因子
+        weights = self.WEIGHTS
+        # 校验码表
+        check_codes = self.CHECK_CODE
+        total = sum(int(id_number[i]) * weights[i] for i in range(17))
+        mod_result = total % 11
+        return check_codes[mod_result]
+
+    def readJsonFromFile(self):
+        try:
+            with open('admdvs.json', 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                self.ADMDVS_MAP = data
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
     def addData(self):
-        for i in range(30):
-            self.provinceSel.addItem("北京", i)
-        self.provinceSel.setMaxVisibleItems(10)
-        self.provinceSel.setEditable(True)
-        #self.provinceSel.setStyleSheet("QComboBox{combobox-popup:0;}")
+        self.readJsonFromFile()
+        self.initQComboBox()
+        self.setSignalSlot()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -3,3 +3,7 @@ __pycache__/
 /.venv
 .idea
 .DS_store
+dist
+build
+test.py
+main.spec

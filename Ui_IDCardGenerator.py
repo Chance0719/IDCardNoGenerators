@@ -1,13 +1,13 @@
 import sys,json
 import calendar
 
+from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
-from PyQt6.QtGui import QIntValidator
 from PyQt6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QRadioButton,
-    QSizePolicy, QTextEdit, QVBoxLayout, QWidget)
+                             QLabel, QLineEdit, QPushButton, QRadioButton,
+                             QSizePolicy, QTextEdit, QVBoxLayout, QWidget, QDialog)
 
-class Ui_IDCardGenerator(object):
+class Ui_IDCardGenerator(QWidget):
 
     ADMDVS_MAP = {}
     ODD_NUM = [1, 3, 5, 7, 9]
@@ -170,6 +170,11 @@ class Ui_IDCardGenerator(object):
         self.certNos = QTextEdit(self.groupBox_4)
         self.certNos.setObjectName(u"certNos")
         self.certNos.setReadOnly(True)
+        # 设置等宽字体
+        # font = QFont("Courier New", 15)
+        # font.setBold(True)
+        # # 可以根据需要调整字体和大小
+        # self.certNos.setFont(font)
 
         self.verticalLayout_2.addWidget(self.certNos)
 
@@ -277,6 +282,9 @@ class Ui_IDCardGenerator(object):
         self.aboutButton.setText(QCoreApplication.translate("IDCardGenerator", u"\u5173\u4e8e", None))
     # retranslateUi
 
+    def centerWindow(self):
+        pass
+
     # 设置信号与槽
     def setSignalSlot(self):
         self.provinceSel.activated.connect(self.updateCity)
@@ -285,6 +293,20 @@ class Ui_IDCardGenerator(object):
         self.monthSel.activated.connect(self.updateDay)
         self.yearSel.activated.connect(self.updateDay)
         self.getCertNoButton.clicked.connect(self.getCertNo)
+        self.aboutButton.clicked.connect(self.showAbout)
+
+    def showAbout(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle('About')
+        dialog.setFixedSize(200, 100)
+
+        dialog.move(500, 300)
+
+        layout = QVBoxLayout()
+        label = QLabel('This is the About dialog.', dialog)
+        layout.addWidget(label)
+        dialog.setLayout(layout)
+        dialog.exec()
 
     def updateDay(self,index):
         year = self.yearSel.currentText()
@@ -306,8 +328,6 @@ class Ui_IDCardGenerator(object):
     def updateDistrict(self,index):
         cityCode = self.citySel.currentData()
         provinceCode = self.provinceSel.currentData()
-        print(cityCode)
-        print(provinceCode)
         for item in self.ADMDVS_MAP:
             if item["value"] == provinceCode:
                 for city in item["children"]:
@@ -345,18 +365,23 @@ class Ui_IDCardGenerator(object):
         day = self.daySel.currentText()
         isMan = self.man.isChecked() # 男单数
         pre = admdvs + year + month + day
+        self.certNos.clear()
         for i in range(100):
             temp = pre + str(i).rjust(2,'0')
             if isMan:
                 for j in self.ODD_NUM:
                     temp2 = temp + str(j)
                     checkCode = self.calculate_check_digit(temp2)
-                    print(temp2 + checkCode)
+                    self.certNos.append(temp2 + checkCode)
             else:
                 for j in self.EVEN_NUM:
                     temp2 = temp + str(j)
                     checkCode = self.calculate_check_digit(temp2)
-                    print(temp2 + checkCode)
+                    self.certNos.append(temp2 + checkCode)
+
+        cursor = self.certNos.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.Start)
+        self.certNos.setTextCursor(cursor)
 
     def calculate_check_digit(self,id_number):
         # 加权因子
@@ -379,6 +404,7 @@ class Ui_IDCardGenerator(object):
         self.readJsonFromFile()
         self.initQComboBox()
         self.setSignalSlot()
+        self.centerWindow()
 
 
 if __name__ == "__main__":

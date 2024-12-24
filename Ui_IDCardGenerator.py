@@ -1,5 +1,6 @@
 import sys,json
 import calendar
+import admdvs
 
 from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
@@ -344,7 +345,7 @@ class Ui_IDCardGenerator(QWidget):
         self.updateCity(1)
         self.updateDistrict(1)
 
-        for i in range(1949,3000):
+        for i in range(1900,3000):
             self.yearSel.addItem(str(i))
 
         for i in range(1,13):
@@ -394,9 +395,10 @@ class Ui_IDCardGenerator(QWidget):
 
     def readJsonFromFile(self):
         try:
-            with open('admdvs.json', 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                self.ADMDVS_MAP = data
+            # with open('admdvs.json', 'r', encoding='utf-8') as file:
+            #     data = json.load(file)
+            #     self.ADMDVS_MAP = data
+            self.ADMDVS_MAP = admdvs.admdvs
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 

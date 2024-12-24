@@ -1,8 +1,9 @@
+import re
 import sys,json
 import calendar
 import admdvs
 
-from PyQt6.QtGui import QTextCursor
+from PyQt6.QtGui import QTextCursor, QGuiApplication
 from PyQt6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
 from PyQt6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QRadioButton,
@@ -17,6 +18,8 @@ class Ui_IDCardGenerator(QWidget):
     WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
     # 校验码表
     CHECK_CODE = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
+
+    REGEX_ID_CARD = "^[1-9]\\d{5}(1|2)\\d{3}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\\d{3}[0-9Xx]$"
 
     def setupUi(self, IDCardGenerator):
         if not IDCardGenerator.objectName():
@@ -284,9 +287,6 @@ class Ui_IDCardGenerator(QWidget):
         self.aboutButton.setText(QCoreApplication.translate("IDCardGenerator", u"\u5173\u4e8e", None))
     # retranslateUi
 
-    def centerWindow(self):
-        pass
-
     # 设置信号与槽
     def setSignalSlot(self,IDCardGenerator):
         self.provinceSel.activated.connect(self.updateCity)
@@ -296,6 +296,28 @@ class Ui_IDCardGenerator(QWidget):
         self.yearSel.activated.connect(self.updateDay)
         self.getCertNoButton.clicked.connect(self.getCertNo)
         self.aboutButton.clicked.connect(lambda : self.showAbout(IDCardGenerator))
+        self.checkCertNoButton.clicked.connect(self.checkCertNo)
+
+    def checkCertNo(self):
+        message = ""
+        certno = self.certNo.text()
+        res = re.fullmatch(self.REGEX_ID_CARD, certno)
+        if res is None:
+            message = "【" + certno + "】不是一个18位证件号码。"
+        else:
+            checkCode = self.calculateCheckDigit(certno[0:17])
+            if checkCode != certno[17]:
+                message = "【" + certno + "】的最后一位校验码不正确。正确校验码应该为：" + checkCode
+
+        self.tipsEdit.clear()
+        self.tipsEdit.setText(message)
+
+
+    def centerWindow(self, IDCardGenerator):
+        screen = QGuiApplication.primaryScreen().size()
+        size = IDCardGenerator.geometry()
+        IDCardGenerator.move((screen.width() - size.width()) // 2,
+                  (screen.height() - size.height()) // 2)
 
     def showAbout(self,IDCardGenerator):
         dialog = QDialog(self)
@@ -412,7 +434,7 @@ class Ui_IDCardGenerator(QWidget):
         self.readJsonFromFile()
         self.initQComboBox()
         self.setSignalSlot(IDCardGenerator)
-        self.centerWindow()
+        self.centerWindow(IDCardGenerator)
 
 
 if __name__ == "__main__":

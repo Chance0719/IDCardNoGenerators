@@ -22,6 +22,7 @@ class Ui_IDCardGenerator(QWidget):
         if not IDCardGenerator.objectName():
             IDCardGenerator.setObjectName(u"IDCardGenerator")
         IDCardGenerator.resize(550, 380)
+        # IDCardGenerator.setGeometry(0, 0, 400, 300)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -258,7 +259,7 @@ class Ui_IDCardGenerator(QWidget):
         self.verticalLayout.setStretch(2, 3)
 
         self.retranslateUi(IDCardGenerator)
-        self.addData()
+        self.addData(IDCardGenerator)
         QMetaObject.connectSlotsByName(IDCardGenerator)
     # setupUi
 
@@ -287,27 +288,32 @@ class Ui_IDCardGenerator(QWidget):
         pass
 
     # 设置信号与槽
-    def setSignalSlot(self):
+    def setSignalSlot(self,IDCardGenerator):
         self.provinceSel.activated.connect(self.updateCity)
         self.provinceSel.activated.connect(self.updateDistrict)
         self.citySel.activated.connect(self.updateDistrict)
         self.monthSel.activated.connect(self.updateDay)
         self.yearSel.activated.connect(self.updateDay)
         self.getCertNoButton.clicked.connect(self.getCertNo)
-        self.aboutButton.clicked.connect(self.showAbout)
+        self.aboutButton.clicked.connect(lambda : self.showAbout(IDCardGenerator))
 
-    def showAbout(self):
+    def showAbout(self,IDCardGenerator):
         dialog = QDialog(self)
-        dialog.setWindowTitle('About')
+        dialog.setWindowTitle('关于')
         dialog.setFixedSize(200, 100)
-
-        dialog.move(500, 300)
-
         layout = QVBoxLayout()
-        label = QLabel('This is the About dialog.', dialog)
+        label = QLabel('身份证号码生成器\nV1.0\nby Chance', dialog)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
         dialog.setLayout(layout)
+        self.centerOnParent(dialog,IDCardGenerator)
         dialog.exec()
+
+    def centerOnParent(self, dialog,IDCardGenerator):
+        frame_geometry = dialog.frameGeometry()
+        parent_center = IDCardGenerator.geometry().center()
+        frame_geometry.moveCenter(parent_center)
+        dialog.move(frame_geometry.topLeft())
 
     def updateDay(self,index):
         year = self.yearSel.currentText()
@@ -372,19 +378,19 @@ class Ui_IDCardGenerator(QWidget):
             if isMan:
                 for j in self.ODD_NUM:
                     temp2 = temp + str(j)
-                    checkCode = self.calculate_check_digit(temp2)
+                    checkCode = self.calculateCheckDigit(temp2)
                     self.certNos.append(temp2 + checkCode)
             else:
                 for j in self.EVEN_NUM:
                     temp2 = temp + str(j)
-                    checkCode = self.calculate_check_digit(temp2)
+                    checkCode = self.calculateCheckDigit(temp2)
                     self.certNos.append(temp2 + checkCode)
 
         cursor = self.certNos.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.Start)
         self.certNos.setTextCursor(cursor)
 
-    def calculate_check_digit(self,id_number):
+    def calculateCheckDigit(self,id_number):
         # 加权因子
         weights = self.WEIGHTS
         # 校验码表
@@ -402,10 +408,10 @@ class Ui_IDCardGenerator(QWidget):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    def addData(self):
+    def addData(self,IDCardGenerator):
         self.readJsonFromFile()
         self.initQComboBox()
-        self.setSignalSlot()
+        self.setSignalSlot(IDCardGenerator)
         self.centerWindow()
 
 

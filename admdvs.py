@@ -5,7 +5,7 @@ admdvs = [
         "children": [
             {
                 "name": "直辖市",
-                "value": "110001",
+                "value": "110100",
                 "children": [
                     {
                         "name": "东城区",
@@ -97,7 +97,7 @@ admdvs = [
         "children": [
             {
                 "name": "直辖市",
-                "value": "120001",
+                "value": "120100",
                 "children": [
                     {
                         "name": "和平区",
@@ -3985,7 +3985,7 @@ admdvs = [
         "children": [
             {
                 "name": "直辖市",
-                "value": "310001",
+                "value": "310100",
                 "children": [
                     {
                         "name": "黄浦区",
@@ -11335,7 +11335,7 @@ admdvs = [
         "children": [
             {
                 "name": "直辖市",
-                "value": "500001",
+                "value": "500100",
                 "children": [
                     {
                         "name": "万州区",

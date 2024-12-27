@@ -2,8 +2,9 @@ import re
 import sys,json
 import calendar
 import admdvs
+import datetime
 
-from PyQt6.QtGui import QTextCursor, QGuiApplication
+from PyQt6.QtGui import QTextCursor, QGuiApplication, QFont
 from PyQt6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
 from PyQt6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QRadioButton,
@@ -301,17 +302,75 @@ class Ui_IDCardGenerator(QWidget):
     def checkCertNo(self):
         message = ""
         certno = self.certNo.text()
-        res = re.fullmatch(self.REGEX_ID_CARD, certno)
-        if res is None:
-            message = "【" + certno + "】不是一个18位证件号码。"
-        else:
-            checkCode = self.calculateCheckDigit(certno[0:17])
-            if checkCode != certno[17]:
-                message = "【" + certno + "】的最后一位校验码不正确。正确校验码应该为：" + checkCode
-
+        message = self.getCheckMessage(certno)
         self.tipsEdit.clear()
         self.tipsEdit.setText(message)
 
+    def getCheckMessage(self, certno):
+        res = re.fullmatch(self.REGEX_ID_CARD, certno)
+        if res is None:
+            message = "【" + certno + "】不是一个18位证件号码。"
+            return message
+        checkCode = self.calculateCheckDigit(certno[0:17])
+        if checkCode != certno[17]:
+            message = "【" + certno + "】的最后一位校验码不正确。正确校验码应该为：" + checkCode
+            return message
+
+        admdvsName = ""
+        admdvs = certno[0:6]
+        p = certno[0:2] + "0000"
+        c = certno[0:4] + "00"
+        year = certno[6:10]
+        month = certno[10:12]
+        day = certno[12:14]
+        gend = "女" if (int(certno[16]) % 2 == 0) else "男"
+        haveP = False
+        for item in self.ADMDVS_MAP:
+            if item["value"] == p:
+                haveP = True
+                admdvsName = item["name"]
+                citys = item["children"]
+                if citys is not None and len(citys) > 0:
+                    haveC = False
+                    for cityTemp in citys:
+                        if cityTemp["value"] == c:
+                            haveC = True
+                            admdvsName = admdvsName + cityTemp["name"]
+                            districts = cityTemp["children"]
+                            if districts is not None and len(districts) > 0:
+                                haveD = False
+                                for districtTemp in districts:
+                                    if districtTemp["value"] == admdvs:
+                                        haveD = True
+                                        admdvsName = admdvsName + districtTemp["name"]
+                                        break
+                                if haveD is False:
+                                    admdvsName = admdvsName + "未知县"
+                            break
+                    if haveC is False:
+                        admdvsName = admdvsName + "未知市"
+                break
+        if haveP is False:
+            admdvsName = admdvsName + "未知省"
+
+        if admdvsName is None or len(admdvsName) == 0:
+            admdvsName = "未知"
+
+        age = 0
+        try:
+            birthday = datetime.datetime(int(year), int(month), int(day)).date()
+            today = datetime.datetime.now()
+            age = today.year - birthday.year
+            if int(str(birthday.month)+str(birthday.day)) < int(str(today.month)+str(today.day)):
+                age-=1
+        except ValueError:
+            message = ("性别：" + gend + "\n出生日期：出生日期不合法\n地区：" + admdvsName)
+            return message
+
+        message = ("性别：" + gend + "\n出生日期："
+                   + year + "年" + month + "月" + day + "日\n年龄：" + str(age) + "\n地区：" + admdvsName)
+
+        return message
 
     def centerWindow(self, IDCardGenerator):
         screen = QGuiApplication.primaryScreen().size()
@@ -322,11 +381,24 @@ class Ui_IDCardGenerator(QWidget):
     def showAbout(self,IDCardGenerator):
         dialog = QDialog(self)
         dialog.setWindowTitle('关于')
-        dialog.setFixedSize(200, 100)
+        dialog.setFixedSize(300, 150)
         layout = QVBoxLayout()
         label = QLabel('身份证号码生成器\nV1.0\nby Chance', dialog)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label2 = QLabel('本软件仅供参考学习使用，请勿使用从事非法之事！', dialog)
+        font = QFont()
+        font.setPointSize(8)
+        label2.setFont(font)
+        label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        githubUrl = QLabel('<a href="https://github.com/Chance0719/IDCardNoGenerators">开源地址：https://github.com/Chance0719/IDCardNoGenerators</a>', dialog)
+        githubUrl.setOpenExternalLinks(True)
+        githubUrl.setWordWrap(True)
+        githubUrl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         layout.addWidget(label)
+        layout.addWidget(githubUrl)
+        layout.addWidget(label2)
         dialog.setLayout(layout)
         self.centerOnParent(dialog,IDCardGenerator)
         dialog.exec()
@@ -389,6 +461,8 @@ class Ui_IDCardGenerator(QWidget):
 
     def getCertNo(self):
         admdvs = self.districtSel.currentData()
+        if admdvs is None:
+            admdvs = self.citySel.currentData()
         year = self.yearSel.currentText()
         month = self.monthSel.currentText()
         day = self.daySel.currentText()

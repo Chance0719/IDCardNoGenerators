@@ -361,7 +361,7 @@ class Ui_IDCardGenerator(QWidget):
             birthday = datetime.datetime(int(year), int(month), int(day)).date()
             today = datetime.datetime.now()
             age = today.year - birthday.year
-            if int(str(birthday.month)+str(birthday.day)) < int(str(today.month)+str(today.day)):
+            if int(str(birthday.month)+str(birthday.day)) > int(str(today.month)+str(today.day)):
                 age-=1
         except ValueError:
             message = ("性别：" + gend + "\n出生日期：出生日期不合法\n地区：" + admdvsName)

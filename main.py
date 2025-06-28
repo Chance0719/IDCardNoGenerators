@@ -17,6 +17,4 @@ if __name__ == "__main__":
     IDCardGenerator.setWindowIcon(QIcon(p + '/icon/card3.ico'))
     IDCardGenerator.show()
 
-
-
     sys.exit(app.exec())
